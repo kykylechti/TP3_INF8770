@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 videos = ["resultat_10s.mp4", "resultat_10s2.mp4"]
 
 transitions = [[91, 136, 197], [67, 180]]
+transitions_gradual = [[],[]]
 
 Sobelx = np.array([[-1.0, 0.0, 1.0],
                    [-2.0, 0.0, 2.0],
@@ -145,3 +146,76 @@ for video_path in videos:
     plt.legend()
     plt.grid(True)
     plt.show()
+
+    # Evaluation : 
+
+    tolerance = 5
+
+    # Vérité terrain
+    true_cuts = transitions[videos.index(video_path)]
+    predicted_cuts = cut_detections
+
+    TP = 0
+    FP = 0
+    FN = 0
+
+    used_predictions = set()
+
+    for t in true_cuts:
+        matched = False
+        for p in predicted_cuts:
+            if abs(p - t) <= tolerance:   # tolérance ici
+                TP += 1
+                used_predictions.add(p)
+                matched = True
+                break
+        if not matched:
+            FN += 1
+
+    FP = len(predicted_cuts) - len(used_predictions)
+
+    precision = TP / (TP + FP) if (TP + FP) > 0 else 0
+    recall = TP / (TP + FN) if (TP + FN) > 0 else 0
+    f1 = 2 * precision * recall / (precision + recall) if (precision + recall) > 0 else 0
+
+    print("\nÉvaluation de la détection des coupes :")
+    print(f" - Vrais Positifs (TP) : {TP}")
+    print(f" - Faux Positifs (FP) : {FP}")
+    print(f" - Faux Négatifs (FN) : {FN}")
+    print(f" - Précision : {precision:.3f}")
+    print(f" - Rappel    : {recall:.3f}")
+    print(f" - Score F1  : {f1:.3f}")
+
+    true_gradual = transitions_gradual[videos.index(video_path)]
+    predicted_gradual = gradual_detections
+
+    TPg = 0
+    FPg = 0
+    FNg = 0
+
+    used_predictions_g = set()
+
+    for t in true_gradual:
+        matched = False
+        for p in predicted_gradual:
+            if abs(p - t) <= tolerance:
+                TPg += 1
+                used_predictions_g.add(p)
+                matched = True
+                break
+        if not matched:
+            FNg += 1
+
+    FPg = len(predicted_gradual) - len(used_predictions_g)
+
+    precision_g = TPg / (TPg + FPg) if (TPg + FPg) > 0 else 0
+    recall_g = TPg / (TPg + FNg) if (TPg + FNg) > 0 else 0
+    f1_g = 2 * precision_g * recall_g / (precision_g + recall_g) if (precision_g + recall_g) > 0 else 0
+
+    print("\nÉvaluation des transitions progressives (±5 frames) :")
+    print(f" - Vrais Positifs (TP) : {TPg}")
+    print(f" - Faux Positifs (FP) : {FPg}")
+    print(f" - Faux Négatifs (FN) : {FNg}")
+    print(f" - Précision : {precision_g:.3f}")
+    print(f" - Rappel    : {recall_g:.3f}")
+    print(f" - Score F1  : {f1_g:.3f}")
